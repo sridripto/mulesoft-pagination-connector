@@ -1,0 +1,19 @@
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:pagination="http://www.mulesoft.org/schema/mule/pagination"
+      xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+          http://www.mulesoft.org/schema/mule/pagination http://www.mulesoft.org/schema/mule/pagination/current/mule-pagination.xsd">
+
+    <pagination:config name="config" configId="configId">
+        <pagination:connection requiredParameter="aValue" />
+    </pagination:config>
+
+    <flow name="sayHiFlow">
+        <pagination:say-hi person="Mariano Gonzalez"/>
+    </flow>
+
+    <flow name="retrieveInfoFlow">
+        <pagination:retrieve-info config-ref="config"/>
+    </flow>
+
+</mule>

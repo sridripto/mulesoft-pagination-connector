@@ -29,3 +29,8 @@ Add to your Mule project's `pom.xml`:
 </dependency>
 
 ```
+
+## Release Notes
+### Release 1.1.0
+
+The pagination operations have been split by strategy. The single Paginate scope (from Release 1.0.0) has been replaced with four dedicated operations, one per pagination strategy. Each operation now shows only the fields relevant to that strategy, eliminating confusion around shared field names.

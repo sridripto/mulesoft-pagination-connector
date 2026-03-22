@@ -1,0 +1,100 @@
+package com.github.pagination.connector.internal.config;
+
+import org.mule.runtime.extension.api.annotation.param.Optional;
+import org.mule.runtime.extension.api.annotation.param.Parameter;
+import org.mule.runtime.extension.api.annotation.param.display.DisplayName;
+import org.mule.runtime.extension.api.annotation.param.display.Example;
+import org.mule.runtime.extension.api.annotation.param.display.Placement;
+import org.mule.runtime.extension.api.annotation.param.display.Summary;
+
+public class CursorBasedConfig {
+
+    @Parameter
+    @Optional(defaultValue = "10")
+    @DisplayName("Records Per Page")
+    @Summary("How many records to fetch per request.")
+    @Example("10")
+    @Placement(tab = "Request", order = 1)
+    private int pageSize;
+
+    @Parameter
+    @Optional(defaultValue = "cursor")
+    @DisplayName("Cursor queryParam Name")
+    @Summary("Query param name to send the cursor on subsequent requests. Examples: cursor, after, next_token.")
+    @Example("cursor")
+    @Placement(tab = "Request", order = 2)
+    private String cursorParamName;
+
+    @Parameter
+    @Optional(defaultValue = "limit")
+    @DisplayName("Limit queryParam Name")
+    @Summary("Query param name for page size. Examples: limit, count, per_page.")
+    @Example("limit")
+    @Placement(tab = "Request", order = 3)
+    private String limitParamName;
+
+    @Parameter
+    @Optional(defaultValue = "1000")
+    @DisplayName("Total Iterations Allowed")
+    @Summary("Safety limit. Stops after this many pages no matter what. Set to -1 to disable.")
+    @Example("1000")
+    @Placement(tab = "Request", order = 4)
+    private int maxPages;
+
+    @Parameter
+    @Optional
+    @DisplayName("Path to Array of Records")
+    @Summary("Dot-path to the records array in the response. Leave blank if the response itself is the array. Example: data, items, result.records")
+    @Example("data")
+    @Placement(tab = "Response", order = 1)
+    private String dataFieldPath;
+
+    @Parameter
+    @Optional
+    @DisplayName("Path to Total Records Count")
+    @Summary("Dot-path to the total record count in the response. Leave blank if the API does not return a total.")
+    @Example("total")
+    @Placement(tab = "Response", order = 2)
+    private String totalCountFieldPath;
+
+    @Parameter
+    @Optional
+    @DisplayName("Path to Next Cursor Field")
+    @Summary("Dot-path to the next cursor/token in the response body. Pagination stops when this field is null or missing. Examples: next_cursor, nextPageToken, paging.cursors.after")
+    @Example("next_cursor")
+    @Placement(tab = "Response", order = 3)
+    private String cursorResponseFieldPath;
+
+    @Parameter
+    @Optional
+    @DisplayName("Stop Condition")
+    @Summary("Stop pagination when this condition is true. Example: payload.hasMore == false")
+    @Example("payload.hasMore == false")
+    @Placement(tab = "Response", order = 4)
+    private String customStopExpression;
+
+    @Parameter
+    @Optional(defaultValue = "true")
+    @DisplayName("Flatten Output")
+    @Summary("true: one flat list of all records. false: list of raw page responses.")
+    @Placement(tab = "Response", order = 5)
+    private boolean flattenPages;
+
+    @Parameter
+    @Optional(defaultValue = "false")
+    @DisplayName("Include Stats")
+    @Summary("If true, wraps output with pages fetched, total records, and stop reason.")
+    @Placement(tab = "Response", order = 6)
+    private boolean includePaginationState;
+
+    public int getPageSize() { return pageSize; }
+    public String getCursorParamName() { return cursorParamName; }
+    public String getLimitParamName() { return limitParamName; }
+    public int getMaxPages() { return maxPages; }
+    public String getDataFieldPath() { return dataFieldPath; }
+    public String getTotalCountFieldPath() { return totalCountFieldPath; }
+    public String getCursorResponseFieldPath() { return cursorResponseFieldPath; }
+    public String getCustomStopExpression() { return customStopExpression; }
+    public boolean isFlattenPages() { return flattenPages; }
+    public boolean isIncludePaginationState() { return includePaginationState; }
+}

@@ -24,7 +24,7 @@ Add to your Mule project's `pom.xml`:
 <dependency>
    <groupId>com.github.pagination</groupId>
    <artifactId>pagination-connector</artifactId>
-   <version>1.0.0</version>
+   <version>1.1.0</version>
    <classifier>mule-plugin</classifier>
 </dependency>
 

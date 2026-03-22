@@ -31,7 +31,9 @@ public class PaginationScopeOperations {
     private static final Logger LOGGER = LoggerFactory.getLogger(PaginationScopeOperations.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    @DisplayName("Page Based Pagination")
+
+
+    @DisplayName("Paginate - Page Based")
     @Summary("Fetches all pages using a page number parameter. Payload inside scope contains the query params for the current page.")
     @org.mule.runtime.extension.api.annotation.param.MediaType(value = ANY, strict = false)
     public void paginatePageBased(Chain operations,
@@ -45,10 +47,11 @@ public class PaginationScopeOperations {
         List<Object> allRecords = new ArrayList<>();
         List<Object> allPages = new ArrayList<>();
 
-        LOGGER.info("Starting PAGE_BASED pagination. StartPage={}, PageSize={}", config.getStartPage(), config.getPageSize());
+        LOGGER.info("Starting PAGE_BASED pagination. Aggregate={}", config.isAggregate());
         executeLoop(operations, state, allRecords, allPages, config.getMaxPages(), config.getDataFieldPath(),
                 config.getTotalCountFieldPath(), null, null, config.getCustomStopExpression(),
-                config.isFlattenPages(), config.isIncludePaginationState(), "PAGE_BASED", callback,
+                config.isFlattenPages(), config.isIncludePaginationState(), config.isAggregate(),
+                "PAGE_BASED", callback,
                 () -> {
                     state.incrementPage();
                     state.setNextRequestParams(buildPageBasedParams(state.getCurrentPage(), config.getPageSize(),
@@ -56,7 +59,7 @@ public class PaginationScopeOperations {
                 });
     }
 
-    @DisplayName("Offset Based Pagination")
+    @DisplayName("Paginate - Offset Based")
     @Summary("Fetches all pages using an offset parameter. Payload inside scope contains the query params for the current page.")
     @org.mule.runtime.extension.api.annotation.param.MediaType(value = ANY, strict = false)
     public void paginateOffsetBased(Chain operations,
@@ -70,10 +73,11 @@ public class PaginationScopeOperations {
         List<Object> allRecords = new ArrayList<>();
         List<Object> allPages = new ArrayList<>();
 
-        LOGGER.info("Starting OFFSET_BASED pagination. StartOffset={}, PageSize={}", config.getStartOffset(), config.getPageSize());
+        LOGGER.info("Starting OFFSET_BASED pagination. Aggregate={}", config.isAggregate());
         executeLoop(operations, state, allRecords, allPages, config.getMaxPages(), config.getDataFieldPath(),
                 config.getTotalCountFieldPath(), null, null, config.getCustomStopExpression(),
-                config.isFlattenPages(), config.isIncludePaginationState(), "OFFSET_BASED", callback,
+                config.isFlattenPages(), config.isIncludePaginationState(), config.isAggregate(),
+                "OFFSET_BASED", callback,
                 () -> {
                     state.incrementOffset(config.getPageSize());
                     state.setNextRequestParams(buildOffsetBasedParams(state.getCurrentOffset(), config.getPageSize(),
@@ -81,7 +85,7 @@ public class PaginationScopeOperations {
                 });
     }
 
-    @DisplayName("Cursor Based Pagination")
+    @DisplayName("Paginate - Cursor Based")
     @Summary("Fetches all pages using a cursor/token returned by the API. Payload inside scope contains the query params for the current page.")
     @org.mule.runtime.extension.api.annotation.param.MediaType(value = ANY, strict = false)
     public void paginateCursorBased(Chain operations,
@@ -96,11 +100,11 @@ public class PaginationScopeOperations {
         List<Object> allRecords = new ArrayList<>();
         List<Object> allPages = new ArrayList<>();
 
-        LOGGER.info("Starting CURSOR_BASED pagination. PageSize={}", config.getPageSize());
+        LOGGER.info("Starting CURSOR_BASED pagination. Aggregate={}", config.isAggregate());
         executeLoop(operations, state, allRecords, allPages, config.getMaxPages(), config.getDataFieldPath(),
                 config.getTotalCountFieldPath(), config.getCursorResponseFieldPath(), config.getCursorParamName(),
                 config.getCustomStopExpression(), config.isFlattenPages(), config.isIncludePaginationState(),
-                "CURSOR_BASED", callback,
+                config.isAggregate(), "CURSOR_BASED", callback,
                 () -> {
                     Map<String, String> nextParams = new HashMap<>();
                     nextParams.put(config.getCursorParamName(), state.getNextCursor());
@@ -109,7 +113,7 @@ public class PaginationScopeOperations {
                 });
     }
 
-    @DisplayName("Link Header Based Pagination")
+    @DisplayName("Paginate - Link Header")
     @Summary("Fetches all pages by following the URL in the Link response header. Use vars.nextPageUrl as the request URL inside the scope.")
     @org.mule.runtime.extension.api.annotation.param.MediaType(value = ANY, strict = false)
     public void paginateLinkHeader(Chain operations,
@@ -122,13 +126,11 @@ public class PaginationScopeOperations {
         List<Object> allRecords = new ArrayList<>();
         List<Object> allPages = new ArrayList<>();
 
-        LOGGER.info("Starting LINK_HEADER pagination.");
+        LOGGER.info("Starting LINK_HEADER pagination. Aggregate={}", config.isAggregate());
         executeLoop(operations, state, allRecords, allPages, config.getMaxPages(), config.getDataFieldPath(),
                 config.getTotalCountFieldPath(), null, null, config.getCustomStopExpression(),
-                config.isFlattenPages(), config.isIncludePaginationState(), "LINK_HEADER", callback,
-                () -> {
-
-                });
+                config.isFlattenPages(), config.isIncludePaginationState(), config.isAggregate(),
+                "LINK_HEADER", callback, () -> {});
     }
 
     private void executeLoop(Chain operations,
@@ -143,6 +145,7 @@ public class PaginationScopeOperations {
                               String customStopExpression,
                               boolean flattenPages,
                               boolean includePaginationState,
+                              boolean aggregate,
                               String strategy,
                               CompletionCallback<Object, Void> callback,
                               Runnable advanceState) {
@@ -162,20 +165,20 @@ public class PaginationScopeOperations {
                         state.incrementPagesFetched();
                         state.addRecordsFetched(pageRecords.size());
                         state.addPage(responseBody);
-                        allPages.add(responseBody);
-                        allRecords.addAll(pageRecords);
 
+                        if (aggregate) {
+                            allPages.add(responseBody);
+                            allRecords.addAll(pageRecords);
+                        }
 
                         if (totalCountFieldPath != null && !totalCountFieldPath.isBlank()) {
                             Long total = ResponseParser.extractTotalCount(responseBody, totalCountFieldPath);
                             if (total != null) state.setTotalRecords(total);
                         }
 
-
                         if (cursorResponseFieldPath != null && !cursorResponseFieldPath.isBlank()) {
                             state.setNextCursor(ResponseParser.extractCursor(responseBody, cursorResponseFieldPath));
                         }
-
 
                         if ("LINK_HEADER".equals(strategy)) {
                             String linkHeader = extractLinkHeader(result, "Link");
@@ -188,7 +191,6 @@ public class PaginationScopeOperations {
                             }
                         }
 
-
                         String stopReason = evaluateStopConditions(state, pageRecords, maxPages,
                                 cursorResponseFieldPath, strategy, customStopExpression, responseBody);
 
@@ -196,9 +198,13 @@ public class PaginationScopeOperations {
                             state.markDone(stopReason);
                             LOGGER.info("Pagination complete. Pages={}, Records={}, Reason={}",
                                     state.getPagesFetched(), state.getTotalRecordsFetched(), stopReason);
+
+                            String finalPayload = aggregate
+                                    ? buildAggregatedPayload(flattenPages, includePaginationState, allRecords, allPages, state, strategy)
+                                    : buildStatsPayload(state, strategy);
+
                             callback.success(Result.<Object, Void>builder()
-                                    .output(buildFinalPayload(flattenPages, includePaginationState,
-                                            allRecords, allPages, state, strategy))
+                                    .output(finalPayload)
                                     .mediaType(MediaType.APPLICATION_JSON)
                                     .build());
                         } else {
@@ -206,7 +212,7 @@ public class PaginationScopeOperations {
                             executeLoop(operations, state, allRecords, allPages, maxPages, dataFieldPath,
                                     totalCountFieldPath, cursorResponseFieldPath, cursorParamName,
                                     customStopExpression, flattenPages, includePaginationState,
-                                    strategy, callback, advanceState);
+                                    aggregate, strategy, callback, advanceState);
                         }
 
                     } catch (Exception e) {
@@ -222,50 +228,79 @@ public class PaginationScopeOperations {
         );
     }
 
+    private String buildAggregatedPayload(boolean flattenPages, boolean includePaginationState,
+                                           List<Object> allRecords, List<Object> allPages,
+                                           PaginationState state, String strategy) {
+        try {
+            if (includePaginationState) {
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("pagesFetched", state.getPagesFetched());
+                result.put("totalRecordsFetched", state.getTotalRecordsFetched());
+                result.put("totalRecordsReported", state.getTotalRecords());
+                result.put("stopReason", state.getStopReason());
+                result.put("strategy", strategy);
+                result.put("records", flattenPages ? allRecords : allPages);
+                return MAPPER.writeValueAsString(result);
+            }
+            return MAPPER.writeValueAsString(flattenPages ? allRecords : allPages);
+        } catch (Exception e) {
+            LOGGER.error("Failed to serialize aggregated payload: {}", e.getMessage());
+            return "[]";
+        }
+    }
+
+    private String buildStatsPayload(PaginationState state, String strategy) {
+        try {
+            Map<String, Object> stats = new LinkedHashMap<>();
+            stats.put("pagesFetched", state.getPagesFetched());
+            stats.put("totalRecordsFetched", state.getTotalRecordsFetched());
+            stats.put("totalRecordsReported", state.getTotalRecords());
+            stats.put("stopReason", state.getStopReason());
+            stats.put("strategy", strategy);
+            return MAPPER.writeValueAsString(stats);
+        } catch (Exception e) {
+            LOGGER.error("Failed to serialize stats payload: {}", e.getMessage());
+            return "{}";
+        }
+    }
+
     private String evaluateStopConditions(PaginationState state, List<Object> pageRecords,
                                            int maxPages, String cursorResponseFieldPath,
                                            String strategy, String customStopExpression,
                                            String responseBody) {
         if (maxPages > 0 && state.getPagesFetched() >= maxPages)
             return "MAX_PAGES: fetched " + state.getPagesFetched() + " pages";
-
         if (ResponseParser.isEmpty(pageRecords))
             return "EMPTY_RESPONSE: page " + state.getPagesFetched() + " returned 0 records";
-
         Long total = state.getTotalRecords();
         if (total != null && state.getTotalRecordsFetched() >= total)
             return "TOTAL_COUNT: fetched " + state.getTotalRecordsFetched() + " of " + total;
-
         if ("CURSOR_BASED".equals(strategy) && state.getNextCursor() == null)
             return "NULL_CURSOR: cursor is null after page " + state.getPagesFetched();
-
         if ("LINK_HEADER".equals(strategy) && state.getNextUrl() == null)
             return "NO_NEXT_LINK: no next Link header after page " + state.getPagesFetched();
-
         if (customStopExpression != null && !customStopExpression.isBlank()
                 && evaluateCustomExpression(customStopExpression, responseBody))
             return "CUSTOM_EXPRESSION: " + customStopExpression;
-
         return null;
     }
 
-    private boolean evaluateCustomExpression(String expression, String responseBody) {
+    private boolean evaluateCustomExpression(String fieldPath, String responseBody) {
         try {
-            if (expression.contains("payload.") && expression.contains("==")) {
-                String[] parts = expression.split("==");
-                if (parts.length == 2) {
-                    String fieldPath = parts[0].trim().replace("payload.", "");
-                    String expectedValue = parts[1].trim().replaceAll("[\"']", "");
-                    String actualValue = ResponseParser.extractCursor(responseBody, fieldPath);
-                    if (actualValue == null && "null".equals(expectedValue)) return true;
-                    if (actualValue != null && actualValue.equalsIgnoreCase(expectedValue)) return true;
-                }
-            }
+            if (fieldPath == null || fieldPath.isBlank()) return false;
+            com.fasterxml.jackson.databind.JsonNode root = ResponseParser.parsePayload(responseBody);
+            com.fasterxml.jackson.databind.JsonNode node = ResponseParser.resolveField(root, fieldPath.trim());
+            if (node == null || node.isMissingNode() || node.isNull()) return false;
+            if (node.isBoolean()) return node.asBoolean();
+            if (node.isTextual()) return Boolean.parseBoolean(node.asText());
+            LOGGER.warn("Stop Condition field '{}' is not a boolean. Got: {}", fieldPath, node);
+            return false;
         } catch (Exception e) {
-            LOGGER.warn("Failed to evaluate stop expression '{}': {}", expression, e.getMessage());
+            LOGGER.warn("Failed to evaluate Stop Condition field '{}': {}", fieldPath, e.getMessage());
         }
         return false;
     }
+
 
     private Map<String, String> buildPageBasedParams(int page, int size, String pageParam, String sizeParam) {
         Map<String, String> params = new HashMap<>();
@@ -314,26 +349,5 @@ public class PaginationScopeOperations {
             LOGGER.debug("Could not extract Link header: {}", e.getMessage());
         }
         return null;
-    }
-
-    private String buildFinalPayload(boolean flattenPages, boolean includePaginationState,
-                                      List<Object> allRecords, List<Object> allPages,
-                                      PaginationState state, String strategy) {
-        try {
-            if (includePaginationState) {
-                Map<String, Object> result = new LinkedHashMap<>();
-                result.put("pagesFetched", state.getPagesFetched());
-                result.put("totalRecordsFetched", state.getTotalRecordsFetched());
-                result.put("totalRecordsReported", state.getTotalRecords());
-                result.put("stopReason", state.getStopReason());
-                result.put("strategy", strategy);
-                result.put("records", flattenPages ? allRecords : allPages);
-                return MAPPER.writeValueAsString(result);
-            }
-            return MAPPER.writeValueAsString(flattenPages ? allRecords : allPages);
-        } catch (Exception e) {
-            LOGGER.error("Failed to serialize payload: {}", e.getMessage());
-            return "[]";
-        }
     }
 }

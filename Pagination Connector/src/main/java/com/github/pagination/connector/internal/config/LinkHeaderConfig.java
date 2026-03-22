@@ -43,9 +43,9 @@ public class LinkHeaderConfig {
 
     @Parameter
     @Optional
-    @DisplayName("Stop Condition")
-    @Summary("Stop pagination when this condition is true. Example: payload.hasMore == false")
-    @Example("payload.hasMore == false")
+    @DisplayName("Stop Condition Field")
+    @Summary("Dot-path to a boolean field in the payload that signals when to stop. Set this field to true inside the scope using a Transform Message to stop pagination. Example: stopPagination")
+    @Example("stopPagination")
     @Placement(tab = "Response", order = 3)
     private String customStopExpression;
 
@@ -63,6 +63,13 @@ public class LinkHeaderConfig {
     @Placement(tab = "Response", order = 5)
     private boolean includePaginationState;
 
+    @Parameter
+    @Optional(defaultValue = "true")
+    @DisplayName("Aggregate Results")
+    @Summary("true: Collect all records across pages into one output. false: process each page inside the scope individually - output after scope will be a stats summary only.")
+    @Placement(tab = "Response", order = 6)
+    private boolean aggregate;
+
     public String getLinkHeaderName() { return linkHeaderName; }
     public int getMaxPages() { return maxPages; }
     public String getDataFieldPath() { return dataFieldPath; }
@@ -70,4 +77,5 @@ public class LinkHeaderConfig {
     public String getCustomStopExpression() { return customStopExpression; }
     public boolean isFlattenPages() { return flattenPages; }
     public boolean isIncludePaginationState() { return includePaginationState; }
+    public boolean isAggregate() { return aggregate; }
 }

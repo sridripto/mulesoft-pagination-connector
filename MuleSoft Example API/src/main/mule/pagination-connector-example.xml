@@ -9,8 +9,8 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1d932242-00da-4608-8e73-55244f1bd5ec" >
 		<http:listener-connection host="localhost" port="8085" readTimeout="300000"/>
 	</http:listener-config>
-	<flow name="main-Flow" doc:id="8a2a5329-1799-44aa-b475-5fb4e4e8aa30" >
-		<http:listener doc:name="Listener" doc:id="a8550879-88c7-4705-9f11-8ce84f6a5435" config-ref="HTTP_Listener_config" path="/"/>
+	<flow name="offset-based-pagination-flow" doc:id="8a2a5329-1799-44aa-b475-5fb4e4e8aa30" >
+		<http:listener doc:name="Listener" doc:id="a8550879-88c7-4705-9f11-8ce84f6a5435" config-ref="HTTP_Listener_config" path="/offset"/>
 		<logger level="INFO" doc:name="Start" doc:id="f99b5e64-d881-4b48-b441-460a1a92cb5b" message="Start"/>
 		<pagination:paginate-offset-based doc:name="Offset Based Pagination" doc:id="d3467f13-320d-4942-ad99-145e9946d2bd" offsetParamName="skip" dataFieldPath="products" totalCountFieldPath="total">
 			<http:request doc:name="Request" doc:id="f0e9967c-15db-4f56-85b6-25bd1d9724a7" url="https://dummyjson.com/products" sendBodyMode="NEVER" sendCorrelationId="AUTO">
@@ -21,8 +21,25 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 	"limit": payload.limit
 }]]]></http:query-params>
 			</http:request>
-			<logger level="INFO" doc:name="Log Payload" doc:id="0a2a5600-78be-4326-b56e-092c53e835ca" message="#[output application/json indent=false&#10;---&#10;payload]" />
+			<logger level="INFO" doc:name="Log Payload" doc:id="0a2a5600-78be-4326-b56e-092c53e835ca" message='#[output application/json indent=false&#10;---&#10;payload]' />
 		</pagination:paginate-offset-based>
 		<logger level="INFO" doc:name="End" doc:id="25b1493a-beef-4941-ba09-349abf1b5c9b" message="End"/>
+	</flow>
+	<flow name="page-based-pagination-flow" doc:id="2e104417-b2aa-4d22-bbec-63bcda03a65b" >
+		<http:listener doc:name="Listener" doc:id="375bdc0b-105d-4b99-85f1-bb1e82c4776f" config-ref="HTTP_Listener_config" path="/page"/>
+		<logger level="INFO" doc:name="Start" doc:id="954f84b4-10f4-43db-bcdd-eabc607dae8e" message="Start"/>
+		<pagination:paginate-page-based doc:name="Page Based Pagination" doc:id="10a2210e-f7ae-4503-b347-17a4b84e5d3e" pageParamName="_page" pageSizeParamName="_limit" customStopExpression="stopCondition" dataFieldPath="records">
+			<http:request doc:name="Request" doc:id="0ee3bf1b-5d41-46c4-944d-763e289f591e" url="https://jsonplaceholder.typicode.com/posts" sendBodyMode="NEVER" sendCorrelationId="AUTO">
+				<http:query-params><![CDATA[#[output application/java
+---
+{
+	"_page": payload.'_page',
+	"_limit": payload.'_limit'
+}]]]></http:query-params>
+			</http:request>
+			<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;    "records": payload,&#10;    "stopCondition": (payload.id default []) contains 50&#10;}]' doc:name="Set Payload" doc:id="b7c6df15-3866-46c8-bebc-90adc67b7e72" />
+			<logger level="INFO" doc:name="Log Payload" doc:id="ff45eef2-0f5d-426f-a0e7-fc65273448b3" message='#[output application/json indent=false&#10;---&#10;payload]' />
+		</pagination:paginate-page-based>
+		<logger level="INFO" doc:name="End" doc:id="ab67a5ed-a6ea-4cb4-a9dc-eb05875926fe" message="End"/>
 	</flow>
 </mule>

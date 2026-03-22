@@ -24,13 +24,15 @@ Add to your Mule project's `pom.xml`:
 <dependency>
    <groupId>com.github.pagination</groupId>
    <artifactId>pagination-connector</artifactId>
-   <version>1.1.0</version>
+   <version>1.2.0</version>
    <classifier>mule-plugin</classifier>
 </dependency>
 
 ```
 
 ## Release Notes
-### Release 1.1.0
+### Release 1.2.0
 
-The pagination operations have been split by strategy. The single Paginate scope (from Release 1.0.0) has been replaced with four dedicated operations, one per pagination strategy. Each operation now shows only the fields relevant to that strategy, eliminating confusion around shared field names.
+- New field "Aggregate Results" added in the Request section. This lets you decide if you want the aggregated payload after exiting the scope.
+- Example added on how to use "Stop Condition Field". Note: Do not use dataweave expression mode in this field.
+- Custom Icon

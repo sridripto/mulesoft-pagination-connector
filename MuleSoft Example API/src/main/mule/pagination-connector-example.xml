@@ -7,22 +7,22 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/pagination http://www.mulesoft.org/schema/mule/pagination/current/mule-pagination.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1d932242-00da-4608-8e73-55244f1bd5ec" >
-		<http:listener-connection host="localhost" port="8085" />
+		<http:listener-connection host="localhost" port="8085" readTimeout="300000"/>
 	</http:listener-config>
 	<flow name="main-Flow" doc:id="8a2a5329-1799-44aa-b475-5fb4e4e8aa30" >
 		<http:listener doc:name="Listener" doc:id="a8550879-88c7-4705-9f11-8ce84f6a5435" config-ref="HTTP_Listener_config" path="/"/>
 		<logger level="INFO" doc:name="Start" doc:id="f99b5e64-d881-4b48-b441-460a1a92cb5b" message="Start"/>
-		<pagination:paginate strategy="OFFSET_BASED" doc:name="Paginate" doc:id="403a27b8-3ae9-4082-9a1e-5cface8844ca" firstParamName="skip" secondParamName="limit" dataFieldPath="products" totalCountFieldPath="total" outputMimeType="application/json" pageSize="100">
-			<http:request doc:name="Request" doc:id="f0e9967c-15db-4f56-85b6-25bd1d9724a7" url="https://dummyjson.com/products" sendBodyMode="NEVER">
-				<http:query-params ><![CDATA[#[output application/java
+		<pagination:paginate-offset-based doc:name="Offset Based Pagination" doc:id="d3467f13-320d-4942-ad99-145e9946d2bd" offsetParamName="skip" dataFieldPath="products" totalCountFieldPath="total">
+			<http:request doc:name="Request" doc:id="f0e9967c-15db-4f56-85b6-25bd1d9724a7" url="https://dummyjson.com/products" sendBodyMode="NEVER" sendCorrelationId="AUTO">
+				<http:query-params><![CDATA[#[output application/java
 ---
 {
 	"skip": payload.skip,
 	"limit": payload.limit
 }]]]></http:query-params>
 			</http:request>
-			<logger level="INFO" doc:name="Log Payload" doc:id="0a2a5600-78be-4326-b56e-092c53e835ca" message="#[output application/json&#10;---&#10;payload]"/>
-		</pagination:paginate>
+			<logger level="INFO" doc:name="Log Payload" doc:id="0a2a5600-78be-4326-b56e-092c53e835ca" message="#[output application/json indent=false&#10;---&#10;payload]" />
+		</pagination:paginate-offset-based>
 		<logger level="INFO" doc:name="End" doc:id="25b1493a-beef-4941-ba09-349abf1b5c9b" message="End"/>
 	</flow>
 </mule>
